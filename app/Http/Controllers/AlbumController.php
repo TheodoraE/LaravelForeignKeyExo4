@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Album;
+use App\Models\Photo;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class AlbumController extends Controller
 {
@@ -35,7 +37,18 @@ class AlbumController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $store = new Photo;
+        $store->url = $request->file('url')->hashName();
+        Storage::put('public/img', $request->file('url'));
+        $store->save();
+
+        $store1 = new Album;
+        $store1->name = $request->name;
+        $store1->author = $request->author;
+        $store1->photo_id = $store->id;
+        $store1->save();
+
+        return redirect()->back();
     }
 
     /**
@@ -55,9 +68,10 @@ class AlbumController extends Controller
      * @param  \App\Models\Album  $album
      * @return \Illuminate\Http\Response
      */
-    public function edit(Album $album)
+    public function edit($id)
     {
-        //
+        $edit = Photo::find($id);
+        return view('pages.edit', compact('edit'));
     }
 
     /**
@@ -67,9 +81,15 @@ class AlbumController extends Controller
      * @param  \App\Models\Album  $album
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Album $album)
+    public function update(Request $request, $id)
     {
-        //
+        $update = Photo::find($id);
+        Storage::delete('public/img/'.$update->url);
+        $update->url = $request->file('url')->hashName();
+        Storage::put('public/img', $request->file('url'));
+        $update->save();
+
+        return redirect('/');
     }
 
     /**
@@ -78,8 +98,13 @@ class AlbumController extends Controller
      * @param  \App\Models\Album  $album
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Album $album)
+    public function destroy($id)
     {
-        //
+        $destroy = Album::find($id);
+        $destroy1 = Photo::find($id);
+        Storage::delete('public/img/'.$destroy1->url);
+        $destroy->delete();
+        $destroy1->delete();
+        return redirect('/');
     }
 }
